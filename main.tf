@@ -6,10 +6,10 @@ terraform {
     }
   }
   backend "azurerm" {
-      resource_group_name  = "rg-tfdemo-state-australiaeast"
-      storage_account_name = "sttfdemostateausteast"
-      container_name       = "tfstate"
-      key                  = "terraform.tfstate"
+    resource_group_name  = "rg-tfdemo-state-australiaeast"
+    storage_account_name = "sttfdemostateausteast"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
   }
   required_version = ">= 1.1.0"
 }
