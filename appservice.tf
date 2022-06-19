@@ -18,4 +18,10 @@ resource "azurerm_linux_web_app" "app" {
     app_command_line = "dotnet WebApp.dll"
     http2_enabled    = true
   }
+
+  connection_string {
+    name  = "Database"
+    type  = "SQLAzure"
+    value = "Server=${azurerm_mssql_server.mssql.fully_qualified_domain_name};Database=${azurerm_mssql_database.database.name};User ID=${var.mssql_administrator_login};Password=${var.mssql_administrator_password};Application Name=App Service"
+  }
 }

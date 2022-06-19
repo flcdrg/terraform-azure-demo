@@ -36,5 +36,4 @@ resource "azurerm_mssql_database" "database" {
   name      = "sqldb-tfdemo-australiaeast"
   server_id = azurerm_mssql_server.mssql.id
   collation = "SQL_Latin1_General_CP1_CI_AS"
-
 }
