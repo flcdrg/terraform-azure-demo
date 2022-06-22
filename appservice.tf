@@ -17,6 +17,7 @@ resource "azurerm_linux_web_app" "app" {
   site_config {
     # app_command_line = "dotnet WebApp.dll"
     http2_enabled = true
+    always_on     = false
     application_stack {
       dotnet_version = "6.0"
     }
