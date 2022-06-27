@@ -92,8 +92,15 @@ jobs:
       run: exit 1
 
     - name: .NET build and publish
-      run: dotnet build
+      run: dotnet publish -o website
       working-directory: src
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: website
+        path: src/website/**
+        if-no-files-found: error
 
   deploy:
     name: 'Deploy'
@@ -112,6 +119,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: website
+        path: website
+
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
@@ -123,10 +136,6 @@ jobs:
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
 
-    - name: .NET build and publish
-      run: dotnet publish
-      working-directory: src
-
     - uses: azure/login@v1
       with:
         creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
@@ -136,4 +145,4 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'app-tfdemo-australiaeast'
-        package: 'src/DotNetCoreSqlDb'
+        package: 'website'
