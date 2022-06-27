@@ -103,8 +103,8 @@ jobs:
     - uses: azure/login@v1
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
+        creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+      
     # Deploy to Azure Web apps
     - name: 'Run Azure webapp deploy action using publish profile credentials'
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
