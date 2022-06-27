@@ -39,5 +39,11 @@ resource "azurerm_mssql_database" "database" {
   sku_name       = "Basic"
   max_size_gb    = 1
   zone_redundant = false
+}
 
+resource "azurerm_mssql_firewall_rule" "azure_services" {
+  name             = "AllowAllWindowsAzureIps"
+  server_id        = azurerm_mssql_server.mssql.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
