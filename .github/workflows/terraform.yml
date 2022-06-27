@@ -120,7 +120,6 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-      # On push to "main", build or change infrastructure according to Terraform configuration files
     - name: Terraform Apply
       run: terraform apply -auto-approve -input=false
 
@@ -136,5 +135,5 @@ jobs:
     - name: 'Run Azure webapp deploy action using publish profile credentials'
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'app-tfdemo-australiaeast' # Replace with your app name
+        app-name: 'app-tfdemo-australiaeast'
         package: 'src/DotNetCoreSqlDb'

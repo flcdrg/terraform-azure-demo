@@ -15,7 +15,7 @@ resource "azurerm_linux_web_app" "app" {
   https_only = true
 
   site_config {
-    # app_command_line = "dotnet WebApp.dll"
+    app_command_line = "dotnet DotNetCoreSqlDb.dll"
     http2_enabled = true
     always_on     = false
     application_stack {
@@ -24,7 +24,7 @@ resource "azurerm_linux_web_app" "app" {
   }
 
   connection_string {
-    name  = "Database"
+    name  = "MyDbConnection"
     type  = "SQLAzure"
     value = "Server=${azurerm_mssql_server.mssql.fully_qualified_domain_name};Database=${azurerm_mssql_database.database.name};User ID=${var.mssql_administrator_login};Password=${var.mssql_administrator_password};Application Name=App Service"
   }
