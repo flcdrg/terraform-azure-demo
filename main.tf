@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.10.0"
+      version = ">= 3.10.0, < 4.0.0"
     }
   }
   backend "azurerm" {
@@ -11,7 +11,7 @@ terraform {
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
-  required_version = ">= 1.1.0"
+  required_version = ">= 1.2.3"
 }
 
 provider "azurerm" {
