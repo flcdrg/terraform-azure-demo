@@ -99,3 +99,16 @@ jobs:
     - name: .NET build and publish
       run: dotnet publish
       working-directory: src
+
+    - uses: azure/login@v1
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Deploy to Azure Web apps
+    - name: 'Run Azure webapp deploy action using publish profile credentials'
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'app-tfdemo-australiaeast' # Replace with your app name
+        package: 'src/DotNetCoreSqlDb'
