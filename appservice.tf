@@ -16,8 +16,8 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
     app_command_line = "dotnet DotNetCoreSqlDb.dll"
-    http2_enabled = true
-    always_on     = false
+    http2_enabled    = true
+    always_on        = false
     application_stack {
       dotnet_version = "6.0"
     }
