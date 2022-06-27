@@ -27,6 +27,7 @@ jobs:
       TF_VAR_mssql_azuread_administrator_object_id: ${{ secrets.mssql_azuread_administrator_object_id }}
       TF_VAR_mssql_administrator_login: ${{ secrets.mssql_administrator_login }}
       TF_VAR_mssql_administrator_password: ${{ secrets.mssql_administrator_password }}
+      CONFIGURATION: release
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -94,3 +95,7 @@ jobs:
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform apply -auto-approve -input=false
+
+    - name: .NET build and publish
+      run: dotnet publish
+      working-directory: src
