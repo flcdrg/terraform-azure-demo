@@ -114,7 +114,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: efbundle
-        path: src/efbundle.exe
+        path: src/efbundle
         if-no-files-found: error
 
   deploy:
