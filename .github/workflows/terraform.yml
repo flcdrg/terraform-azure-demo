@@ -107,7 +107,7 @@ jobs:
         if-no-files-found: error
 
     - name: .NET ef migration bundle
-      run: dotnet ef bundle --project ./DotNetCoreSqlDb -o efbundle
+      run: dotnet ef bundle --project ./DotNetCoreSqlDb
       working-directory: src
 
     - name: Upload a Build Artifact
