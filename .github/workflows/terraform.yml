@@ -91,6 +91,9 @@ jobs:
       if: steps.plan.outcome == 'failure'
       run: exit 1
 
+    - name: .NET Tool restore
+      run: dotnet tool restore
+
     - name: .NET build and publish
       run: dotnet publish -o website
       working-directory: src
@@ -100,6 +103,17 @@ jobs:
       with:
         name: website
         path: src/website/**
+        if-no-files-found: error
+
+    - name: .NET ef migration bundle
+      run: dotnet ef bundle --project ./DotNetCoreSqlDb -o efbundle
+      working-directory: src
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: efbundle
+        path: src/efbundle.exe
         if-no-files-found: error
 
   deploy:
@@ -125,6 +139,11 @@ jobs:
         name: website
         path: website
 
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: efbundle
+
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
@@ -139,6 +158,9 @@ jobs:
     - uses: azure/login@v1
       with:
         creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+    - name: DB Migration
+      run: ./efbundle --connection "Server=tcp:sql-tfdemo-australiaeast.database.windows.net,1433;Initial Catalog=sqldb-tfdemo-australiaeast;Persist Security Info=False;User ID=${{ secrets.mssql_administrator_login }};Password=${{ secrets.mssql_administrator_password }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
 
     # Deploy to Azure Web apps
     - name: 'Run Azure webapp deploy action using publish profile credentials'
