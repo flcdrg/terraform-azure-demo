@@ -161,7 +161,9 @@ jobs:
         creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
 
     - name: DB Migration
-      run: ./efbundle --connection "Server=tcp:sql-tfdemo-australiaeast.database.windows.net,1433;Initial Catalog=sqldb-tfdemo-australiaeast;Persist Security Info=False;User ID=${{ secrets.mssql_administrator_login }};Password=${{ secrets.mssql_administrator_password }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+      run: |
+        chmod u+x ./efbundle
+        ./efbundle --connection "Server=tcp:sql-tfdemo-australiaeast.database.windows.net,1433;Initial Catalog=sqldb-tfdemo-australiaeast;Persist Security Info=False;User ID=${{ secrets.mssql_administrator_login }};Password=${{ secrets.mssql_administrator_password }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
 
     # Deploy to Azure Web apps
     - name: 'Run Azure webapp deploy action using publish profile credentials'
