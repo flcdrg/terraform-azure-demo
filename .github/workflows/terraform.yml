@@ -2,12 +2,12 @@
 # `terraform init`, `terraform fmt`, and `terraform plan`. On push events to the "main" branch, `terraform apply`
 # will be executed.
 
-name: 'Terraform'
+name: "Terraform"
 
 on:
   push:
     branches:
-    - "main"
+      - "main"
   pull_request:
 
 permissions:
@@ -26,7 +26,7 @@ env:
 
 jobs:
   build:
-    name: 'Build'
+    name: "Build"
     runs-on: ubuntu-latest
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -35,90 +35,96 @@ jobs:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v3
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: terraform init
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: terraform init -no-color -input=false
 
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform Format
+        run: terraform fmt -check
 
-    # Generates an execution plan for Terraform
-    - name: Terraform Plan
-      id: plan
-      run: terraform plan -no-color -input=false
-      continue-on-error: true
+      # Generates an execution plan for Terraform
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
 
-    - name: Update Pull Request
-      uses: actions/github-script@v6
-      if: github.event_name == 'pull_request'
-      env:
-        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-          #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
 
-          <details><summary>Show Plan</summary>
+            <details><summary>Show Plan</summary>
 
-          \`\`\`\n
-          ${process.env.PLAN}
-          \`\`\`
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
 
-          </details>
+            </details>
 
-          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: output
-          })
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
 
-    - name: Terraform Plan Status
-      if: steps.plan.outcome == 'failure'
-      run: exit 1
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
 
-    - name: .NET Tool restore
-      run: dotnet tool restore
-      working-directory: src
+      # Install .NET 6 SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
 
-    - name: .NET build and publish
-      run: dotnet publish -o website
-      working-directory: src
+      - name: .NET Tool restore
+        run: dotnet tool restore
+        working-directory: src
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: website
-        path: src/website/**
-        if-no-files-found: error
+      - name: .NET build and publish
+        run: dotnet publish -o website
+        working-directory: src
 
-    - name: .NET ef migration bundle
-      run: dotnet ef migrations bundle --project ./DotNetCoreSqlDb
-      working-directory: src
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: src/website/**
+          if-no-files-found: error
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: efbundle
-        path: src/efbundle
-        if-no-files-found: error
+      - name: .NET ef migration bundle
+        run: dotnet ef migrations bundle --verbose --project ./DotNetCoreSqlDb
+        working-directory: src
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: efbundle
+          path: src/efbundle
+          if-no-files-found: error
 
   deploy:
-    name: 'Deploy'
+    name: "Deploy"
     needs: build
     runs-on: ubuntu-latest
     environment: production
@@ -130,45 +136,45 @@ jobs:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v3
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: website
-        path: website
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: website
+          path: website
 
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: efbundle
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: efbundle
 
-    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: terraform init
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: terraform init -no-color -input=false
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve -input=false
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false
 
-    - uses: azure/login@v1
-      with:
-        creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+      - uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
 
-    - name: DB Migration
-      run: |
-        chmod u+x ./efbundle
-        ./efbundle --help
-        ./efbundle --connection 'Server=tcp:sql-tfdemo-australiaeast.database.windows.net,1433;Initial Catalog=sqldb-tfdemo-australiaeast;Persist Security Info=False;User ID=${{ secrets.mssql_administrator_login }};Password=${{ secrets.mssql_administrator_password }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+      - name: DB Migration
+        run: |
+          chmod u+x ./efbundle
+          ./efbundle --help
+          ./efbundle --connection 'Server=tcp:sql-tfdemo-australiaeast.database.windows.net,1433;Initial Catalog=sqldb-tfdemo-australiaeast;Persist Security Info=False;User ID=${{ secrets.mssql_administrator_login }};Password=${{ secrets.mssql_administrator_password }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
 
-    # Deploy to Azure Web apps
-    - name: 'Run Azure webapp deploy action using publish profile credentials'
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'app-tfdemo-australiaeast'
-        package: 'website'
+      # Deploy to Azure Web apps
+      - name: "Run Azure webapp deploy action using publish profile credentials"
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "app-tfdemo-australiaeast"
+          package: "website"
