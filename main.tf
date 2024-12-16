@@ -18,7 +18,6 @@ provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "rg" {
-  name     = "rg-tfdemo-australiaeast"
-  location = "australiaeast"
+data "azurerm_resource_group" "rg" {
+  name = "rg-tfdemo-australiaeast"
 }
