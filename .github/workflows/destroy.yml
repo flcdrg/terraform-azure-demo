@@ -1,6 +1,6 @@
 # This workflow runs every day to clean up the resources created by the Terraform configuration
 
-name: "Terraform"
+name: "Destroy"
 
 on:
   schedule:
