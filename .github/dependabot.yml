@@ -19,3 +19,15 @@ updates:
     directory: "/src" # Location of package manifests
     schedule:
       interval: "weekly"
+    group:
+      dotnet:
+        applies-to: version-updates
+        update-types:
+        - "minor"
+        - "patch"
+
+  - package-ecosystem: "dotnet-sdk"
+    directory: "/src"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
