@@ -23,8 +23,10 @@ updates:
       dotnet:
         applies-to: version-updates
         update-types:
-        - "minor"
-        - "patch"
+          - "minor"
+          - "patch"
+        patterns:
+          - "*" # Prefer a single PR per solution update.
 
   - package-ecosystem: "dotnet-sdk"
     directory: "/src"
