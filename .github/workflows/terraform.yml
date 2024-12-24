@@ -100,6 +100,10 @@ jobs:
         run: dotnet tool restore
         working-directory: src
 
+      - name: .NET restore
+        run: dotnet restore --runtime linux-x64
+        working-directory: src
+
       - name: .NET build and publish
         run: dotnet publish -o website
         working-directory: src
