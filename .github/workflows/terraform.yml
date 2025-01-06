@@ -90,7 +90,7 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      # Install .NET 6 SDK
+      # Install .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -168,6 +168,11 @@ jobs:
       - uses: azure/login@v2
         with:
           creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
 
       - name: DB Migration
         run: |
