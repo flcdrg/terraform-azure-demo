@@ -98,6 +98,15 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
+  dotnet-build:
+    name: "Build .NET"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v6
+
       # Install .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -138,7 +147,9 @@ jobs:
 
   deploy:
     name: "Deploy"
-    needs: build
+    needs:
+      - build
+      - dotnet-build
     runs-on: ubuntu-latest
     environment: production
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
