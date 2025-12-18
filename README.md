@@ -1,80 +1,72 @@
 # Terraform Azure Demo
 
-Demo repo using Terraform to deploy a simple app to Azure using GitHub Actions
+Demo repo using Terraform to deploy a simple app to Azure using GitHub Actions.
+
+State is stored in a separate Azure Storage Account.
 
 ## Developer/environment configuration
 
-In HCP Terraform:
-
-1. New | Workspace
-2. Select project
-3. Click **Create**
-4. Select CLI-driven workflow
-5. Enter workspace name 'terraform-azure-demo'
-
-<https://www.hashicorp.com/en/blog/access-azure-from-hcp-terraform-with-oidc-federation>
-
-<https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/azure-configuration>
-
-1. Create Azure resource group
-
-    ```bash
-    az group create --name rg-terraform-azure-demo-australiaeast --location australiaeast
-    ```
-
-2. Create service principal and role assignments
-
-    ```bash
-    az ad sp create-for-rbac --name sp-terraform-azure-demo-australiaeast --role Contributor --scopes /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-terraform-azure-demo-australiaeast
-
-    az role assignment create --assignee sp-terraform-azure-demo-australiaeast --role "Role Based Access Control Administrator" --scope /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-terraform-azure-demo-australiaeast
-    ```
-
-Make a note of the appID and tenant ID
-
-Create credential.json
-
-```json
-{
-    "name": "tfc-plan-credential",
-    "issuer": "https://app.terraform.io",
-    "subject": "organization:flcdrg:project:my-project-name:workspace:terraform-azure-demo:run_phase:plan",
-    "description": "Terraform Plan",
-    "audiences": [
-        "api://AzureADTokenExchange"
-    ]
-}
-```
-
-And create federated credentials for your service principal. The `--id` parameter should be set to the appId that you noted previously.
+### 1) Azure resource group
 
 ```bash
-az ad app federated-credential create --id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx --parameters credential.json
+az group create --name rg-tfdemo-australiaeast --location australiaeast
 ```
 
-Update the credential.json file and replace 'plan' with 'apply' (3 places). Create a second federated credential by running the above command again.
+State is stored in an Azure Storage account `sttfdemostateausteast` in a separate resource group
 
-Back in HCP Terraform, set the following environment variables in your workspace
+```bash
+az group create --name rg-tfdemo-state-australiaeast --location australiaeast
+```
 
-`TFC_AZURE_PROVIDER_AUTH` = true
-`TFC_AZURE_RUN_CLIENT_ID` = \<appId value\>
-`ARM_SUBSCRIPTION_ID` = Azure subscription id
-`ARM_TENANT_ID` = Azure tenant id
 
-And the following Terraform variables:
 
-`mssql_azuread_administrator_object_id` = the Entra ID object ID of an account to set as administrator
+### 2) App registration + roles for OIDC (no client secret)
 
-Click on your profile and select **Account settings**, then **Tokens**.
-Click on **Create an API token**
-In **Description** field enter `
-6. Review (and adjust if required) the expiration date
-7. Click **Create**
-8. Note the token value.
+```bash
+# Create an app registration for GitHub Actions
+az ad app create --display-name sp-tfdemo-australiaeast
 
-To allow the GitHub Action workflows to connect to HCP Terraform, in the GitHub project
+# Create the service principal and assign roles needed by Terraform
+APP_ID=$(az ad app list --display-name sp-tfdemo-australiaeast --query "[0].appId" -o tsv)
+az ad sp create --id "$APP_ID"
 
-1. Go to **Settings**, **Secrets and Variables**
-2. In **Actions**, click on **New repository secret**
-3. In **Name**, enter `TF_API_TOKEN`
-4. In **Secret**, paste the HCP Terraform token, and click **Add secret**
+SUBSCRIPTION_ID=<your-subscription-id>
+SCOPE=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-tfdemo-australiaeast
+STATE_SCOPE=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-tfdemo-state-australiaeast/providers/Microsoft.Storage/storageAccounts/sttfdemostateausteast
+
+az role assignment create --assignee "$APP_ID" --role Contributor --scope $SCOPE
+az role assignment create --assignee "$APP_ID" --role "Role Based Access Control Administrator" --scope $SCOPE
+az role assignment create --assignee "$APP_ID" --role "Storage Blob Data Contributor" --scope $STATE_SCOPE
+az role assignment create --assignee "$APP_ID" --role "Storage Account Contributor" --scope $STATE_SCOPE
+```
+
+### 3) Add a federated credential for GitHub Actions
+
+Grant the workflow permission to request tokens via GitHub OIDC. Update the `subject` if you want additional branches or environments.
+
+```bash
+cat > credential.json <<'EOF'
+{
+    "name": "github-actions-main",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:flcdrg/terraform-azure-demo:ref:refs/heads/main",
+    "description": "OIDC for Terraform workflow",
+    "audiences": ["api://AzureADTokenExchange"]
+}
+EOF
+
+az ad app federated-credential create --id "$APP_ID" --parameters credential.json
+```
+
+If you want pull requests to plan with OIDC, add another credential with a subject such as `repo:flcdrg/terraform-azure-demo:pull_request` (or a specific environment). See [GitHub OIDC subjects](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-cli%2Cwindows#configure-federated-credentials-on-azure-ad).
+
+### 4) Repository secrets and permissions
+
+Set the following GitHub secrets (no client secret is required):
+
+- `ARM_CLIENT_ID` = the app registration client ID (`$APP_ID`)
+- `ARM_TENANT_ID` = your Azure AD tenant ID
+- `ARM_SUBSCRIPTION_ID` = your subscription ID
+- `mssql_azuread_administrator_object_id`, `mssql_administrator_login`, `mssql_administrator_password` (as before)
+
+Ensure GitHub Actions has `id-token: write` permission (already set in the workflow) and that repository/workflow-level permissions allow it.
